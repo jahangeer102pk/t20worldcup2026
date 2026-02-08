@@ -2,106 +2,171 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StreamCast - NZ vs AFG</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>StreamCast - Mobile Live Streaming Player</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
         
         body {
             background-color: #0f0f0f;
             color: #fff;
-            line-height: 1.6;
+            line-height: 1.5;
+            overflow-x: hidden;
+            touch-action: manipulation;
         }
         
         .container {
-            display: flex;
-            max-width: 1600px;
+            max-width: 100%;
             margin: 0 auto;
-            padding: 20px;
-            gap: 20px;
+            padding: 0;
         }
         
-        /* Main player section */
-        .player-section {
-            flex: 3;
-            min-width: 0; /* Prevents flex overflow */
+        /* Header */
+        .mobile-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(15, 15, 15, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ff0040;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .header-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
         }
         
         /* Video player container */
         .video-container {
             position: relative;
             background-color: #000;
-            border-radius: 12px;
+            width: 100%;
+            margin-top: 60px;
+            aspect-ratio: 16/9;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            margin-bottom: 20px;
         }
         
         #video-player {
             width: 100%;
-            height: auto;
+            height: 100%;
             display: block;
-            cursor: pointer;
+            object-fit: contain;
         }
         
-        .player-overlay {
+        /* Mobile-friendly video controls */
+        .mobile-controls-overlay {
             position: absolute;
-            bottom: 0;
+            top: 0;
             left: 0;
             right: 0;
-            background: linear-gradient(transparent, rgba(0,0,0,0.7));
-            padding: 30px 20px 20px;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 15px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 20%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.2) 80%, rgba(0,0,0,0.4) 100%);
             opacity: 0;
             transition: opacity 0.3s;
         }
         
-        .video-container:hover .player-overlay {
+        .video-container.touch-active .mobile-controls-overlay,
+        .video-container:hover .mobile-controls-overlay {
             opacity: 1;
         }
         
-        /* Video controls */
-        .video-controls {
+        .top-controls {
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            margin-top: 10px;
+            align-items: center;
         }
         
-        .control-group {
+        .live-indicator {
+            background-color: #ff0040;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 5px;
         }
         
-        .control-btn {
-            background: none;
+        .center-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+        }
+        
+        .mobile-control-btn {
+            background-color: rgba(0, 0, 0, 0.6);
             border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
             color: white;
-            font-size: 18px;
+            font-size: 24px;
             cursor: pointer;
-            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
         }
         
-        .control-btn:hover {
-            color: #ff0040;
+        .mobile-control-btn:active {
+            background-color: rgba(255, 0, 64, 0.7);
+            transform: scale(0.95);
+        }
+        
+        .mobile-control-btn-large {
+            width: 70px;
+            height: 70px;
+            font-size: 28px;
+        }
+        
+        .bottom-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
         
         .progress-container {
-            flex-grow: 1;
-            margin: 0 15px;
+            width: 100%;
         }
         
         .progress-bar {
             width: 100%;
-            height: 6px;
-            background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 3px;
+            height: 4px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
             overflow: hidden;
             cursor: pointer;
         }
@@ -113,217 +178,199 @@
             transition: width 0.1s;
         }
         
-        .time-display {
+        .time-volume-container {
             display: flex;
             justify-content: space-between;
-            margin-top: 5px;
+            align-items: center;
+        }
+        
+        .time-display {
             font-size: 14px;
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .volume-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .volume-slider {
+            width: 80px;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+            outline: none;
+        }
+        
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #ff0040;
+            cursor: pointer;
         }
         
         /* Stream info */
         .stream-info {
-            background-color: #1a1a1a;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
+            padding: 20px 15px;
+            background-color: #0f0f0f;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .stream-title {
-            font-size: 22px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            font-size: 18px;
+            margin-bottom: 8px;
+            line-height: 1.3;
         }
         
-        .live-badge {
-            background-color: #ff0040;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
+        .stream-description {
+            color: rgba(255, 255, 255, 0.7);
             font-size: 14px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            margin-bottom: 15px;
         }
         
         .stream-stats {
             display: flex;
-            gap: 20px;
+            justify-content: space-between;
             margin-top: 15px;
-            color: rgba(255, 255, 255, 0.7);
         }
         
         .stat {
             display: flex;
+            flex-direction: column;
             align-items: center;
             gap: 5px;
         }
         
-        /* Sidebar section */
-        .sidebar {
-            flex: 1;
-            min-width: 350px;
+        .stat-icon {
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.8);
         }
         
-        /* Chat section */
-        .chat-container {
-            background-color: #1a1a1a;
-            border-radius: 12px;
-            overflow: hidden;
-            margin-bottom: 20px;
-            display: flex;
-            flex-direction: column;
-            height: 500px;
+        .stat-count {
+            font-size: 16px;
+            font-weight: 500;
         }
         
-        .chat-header {
-            background-color: #252525;
-            padding: 15px 20px;
-            font-weight: bold;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .chat-messages {
-            flex-grow: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        
-        .chat-message {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .user-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background-color: #333;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        
-        .message-content {
-            flex-grow: 1;
-        }
-        
-        .message-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 5px;
-        }
-        
-        .username {
-            font-weight: bold;
-            font-size: 14px;
-        }
-        
-        .message-time {
-            color: rgba(255, 255, 255, 0.5);
+        .stat-label {
             font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
         }
         
-        .message-text {
-            background-color: #252525;
-            padding: 10px 15px;
-            border-radius: 18px;
-            border-top-left-radius: 5px;
-            font-size: 14px;
-            line-height: 1.4;
+        .like-btn:active .stat-icon {
+            color: #ff0040;
+            transform: scale(1.2);
         }
         
-        .chat-input-container {
-            padding: 15px 20px;
-            background-color: #252525;
-            display: flex;
-            gap: 10px;
-        }
-        
-        .chat-input {
-            flex-grow: 1;
-            background-color: #333;
-            border: none;
-            border-radius: 20px;
-            padding: 12px 20px;
-            color: white;
-            font-size: 14px;
-        }
-        
-        .chat-send-btn {
-            background-color: #ff0040;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        /* Stream settings */
-        .settings-container {
+        /* Stream settings panel */
+        .settings-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
             background-color: #1a1a1a;
-            border-radius: 12px;
-            padding: 20px;
+            border-radius: 20px 20px 0 0;
+            padding: 25px 20px 40px;
+            z-index: 200;
+            transform: translateY(100%);
+            transition: transform 0.3s ease-out;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .settings-panel.open {
+            transform: translateY(0);
         }
         
         .settings-header {
-            font-weight: bold;
-            margin-bottom: 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
         
-        .settings-option {
-            margin-bottom: 15px;
+        .settings-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .close-settings {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        
+        .settings-group {
+            margin-bottom: 25px;
         }
         
         .settings-label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
+            font-size: 14px;
             color: rgba(255, 255, 255, 0.8);
         }
         
-        .quality-select, .speed-select {
+        .settings-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .quality-option {
+            background-color: #252525;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 18px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .quality-option.active {
+            background-color: #ff0040;
+            color: white;
+        }
+        
+        .settings-select {
             width: 100%;
             background-color: #252525;
             border: none;
+            border-radius: 10px;
+            padding: 15px;
             color: white;
-            padding: 10px 15px;
-            border-radius: 8px;
+            font-size: 16px;
             cursor: pointer;
         }
         
         /* Stream URL info */
         .stream-url-info {
             background-color: #1a1a1a;
-            border-radius: 12px;
+            margin: 20px 15px;
             padding: 15px;
-            margin-top: 20px;
+            border-radius: 12px;
             font-size: 14px;
         }
         
         .stream-url {
             background-color: #252525;
-            padding: 10px;
+            padding: 12px;
             border-radius: 8px;
-            margin-top: 8px;
+            margin-top: 10px;
             word-break: break-all;
             font-family: monospace;
+            font-size: 12px;
             color: #4CAF50;
         }
         
@@ -335,11 +382,12 @@
             transform: translate(-50%, -50%);
             text-align: center;
             display: none;
+            z-index: 10;
         }
         
         .spinner {
-            border: 5px solid rgba(255, 255, 255, 0.3);
-            border-top: 5px solid #ff0040;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #ff0040;
             border-radius: 50%;
             width: 50px;
             height: 50px;
@@ -358,265 +406,444 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background-color: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 10px;
+            background-color: rgba(0, 0, 0, 0.85);
+            padding: 25px;
+            border-radius: 15px;
             text-align: center;
+            max-width: 80%;
             display: none;
+            z-index: 10;
+            backdrop-filter: blur(10px);
         }
         
-        /* Responsive design */
-        @media (max-width: 1200px) {
-            .container {
-                flex-direction: column;
-            }
-            
-            .sidebar {
-                min-width: 100%;
-            }
-        }
-        
-        /* Player controls active state */
-        .control-btn.active {
+        .error-icon {
+            font-size: 40px;
+            margin-bottom: 15px;
             color: #ff0040;
         }
         
-        /* Live viewers animation */
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+        .retry-btn {
+            margin-top: 20px;
+            background-color: #ff0040;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
         }
         
-        .live-viewers {
-            animation: pulse 2s infinite;
+        /* Bottom navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(15, 15, 15, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 100;
         }
         
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 10px;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 10px;
+            transition: all 0.2s;
         }
         
-        ::-webkit-scrollbar-track {
-            background: #252525;
+        .nav-item.active {
+            color: #ff0040;
         }
         
-        ::-webkit-scrollbar-thumb {
-            background: #444;
-            border-radius: 4px;
+        .nav-item:active {
+            background-color: rgba(255, 0, 64, 0.1);
         }
         
-        ::-webkit-scrollbar-thumb:hover {
-            background: #555;
+        .nav-icon {
+            font-size: 20px;
+        }
+        
+        /* Backdrop for settings panel */
+        .settings-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 150;
+            display: none;
+            backdrop-filter: blur(5px);
+        }
+        
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 1000;
+            font-size: 14px;
+            animation: slideDown 0.3s ease-out, fadeOut 0.3s ease-out 2.7s;
+            max-width: 90%;
+            text-align: center;
+        }
+        
+        @keyframes slideDown {
+            from { top: 50px; opacity: 0; }
+            to { top: 70px; opacity: 1; }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        /* Landscape mode adjustments */
+        @media (orientation: landscape) and (max-height: 500px) {
+            .video-container {
+                margin-top: 50px;
+                aspect-ratio: unset;
+                height: calc(100vh - 50px);
+            }
+            
+            .mobile-controls-overlay {
+                padding: 10px;
+            }
+            
+            .mobile-control-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+            
+            .mobile-control-btn-large {
+                width: 55px;
+                height: 55px;
+                font-size: 22px;
+            }
+            
+            .stream-info {
+                display: none;
+            }
+            
+            .bottom-nav {
+                display: none;
+            }
+        }
+        
+        /* Tablet and desktop adjustments */
+        @media (min-width: 768px) {
+            .container {
+                max-width: 800px;
+                padding: 20px 0;
+            }
+            
+            .video-container {
+                margin-top: 0;
+                border-radius: 15px;
+                overflow: hidden;
+            }
+            
+            .mobile-header {
+                position: relative;
+                background: transparent;
+                backdrop-filter: none;
+                border: none;
+                padding: 0 0 15px 0;
+            }
+            
+            .stream-info {
+                border-radius: 15px;
+                margin-top: 15px;
+                padding: 20px;
+            }
+            
+            .stream-url-info {
+                margin: 20px 0;
+                border-radius: 15px;
+            }
+            
+            .bottom-nav {
+                display: none;
+            }
+            
+            .settings-panel {
+                max-width: 500px;
+                left: 50%;
+                transform: translate(-50%, 100%);
+                border-radius: 15px 15px 0 0;
+            }
+            
+            .settings-panel.open {
+                transform: translate(-50%, 0);
+            }
+        }
+        
+        /* Hide certain elements on small screens */
+        @media (max-width: 767px) {
+            .header-actions .fa-expand {
+                display: none;
+            }
+        }
+        
+        /* Touch improvements */
+        .touch-area {
+            padding: 15px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+        }
+        
+        /* Prevent text selection */
+        .no-select {
+            -webkit-user-select: none;
+            user-select: none;
         }
     </style>
 </head>
-<body>
+<body class="no-select">
     <div class="container">
-        <div class="player-section">
-            <!-- Video player -->
-            <div class="video-container">
-                <video id="video-player" poster="https://images.unsplash.com/photo-1593305841991-05c297ba4575?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80">
-                    <!-- Your custom stream URL is set here -->
-                    <source src="https://wasitv-pro.site/dd.php?c=star1in" type="application/x-mpegURL">
-                    Your browser does not support the video tag.
-                </video>
-                
-                <!-- Loading indicator -->
-                <div class="loading-indicator" id="loading-indicator">
-                    <div class="spinner"></div>
-                    <div>Loading stream...</div>
+        <!-- Mobile Header -->
+        <div class="mobile-header">
+            <div class="logo">StreamCast</div>
+            <div class="header-actions">
+                <button class="header-btn" id="settings-btn">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <button class="header-btn" id="fullscreen-btn">
+                    <i class="fas fa-expand"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Video player -->
+        <div class="video-container" id="video-container">
+            <video id="video-player" playsinline webkit-playsinline>
+                <!-- Your custom stream URL -->
+                <source src="https://wasitv-pro.site/dd.php?c=star1in" type="application/x-mpegURL">
+                Your browser does not support the video tag.
+            </video>
+            
+            <!-- Loading indicator -->
+            <div class="loading-indicator" id="loading-indicator">
+                <div class="spinner"></div>
+                <div>Loading stream...</div>
+            </div>
+            
+            <!-- Error message -->
+            <div class="error-message" id="error-message">
+                <div class="error-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div id="error-text">Unable to load the stream</div>
+                <button class="retry-btn" id="retry-btn">Retry Connection</button>
+            </div>
+            
+            <!-- Mobile-friendly controls overlay -->
+            <div class="mobile-controls-overlay" id="mobile-controls">
+                <div class="top-controls">
+                    <div class="live-indicator">
+                        <i class="fas fa-circle"></i> LIVE
+                    </div>
+                    <button class="mobile-control-btn" id="mobile-settings-btn">
+                        <i class="fas fa-cog"></i>
+                    </button>
                 </div>
                 
-                <!-- Error message -->
-                <div class="error-message" id="error-message">
-                    <div style="font-size: 24px; margin-bottom: 10px; color: #ff0040;">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <div id="error-text">Unable to load the stream</div>
-                    <button id="retry-btn" style="margin-top: 15px; background-color: #ff0040; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">Retry</button>
+                <div class="center-controls">
+                    <button class="mobile-control-btn" id="rewind-btn">
+                        <i class="fas fa-backward"></i>
+                    </button>
+                    <button class="mobile-control-btn mobile-control-btn-large" id="mobile-play-btn">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <button class="mobile-control-btn" id="forward-btn">
+                        <i class="fas fa-forward"></i>
+                    </button>
                 </div>
                 
-                <div class="player-overlay">
-                    <div class="video-controls">
-                        <div class="control-group">
-                            <button class="control-btn" id="play-pause-btn">
-                                <i class="fas fa-play"></i>
-                            </button>
-                            <button class="control-btn" id="mute-btn">
-                                <i class="fas fa-volume-up"></i>
-                            </button>
-                            <div class="volume-container">
-                                <input type="range" id="volume-slider" min="0" max="100" value="100" class="volume-slider">
-                            </div>
-                            <div class="time-display">
-                                <span id="current-time">0:00</span> / <span id="duration">LIVE</span>
-                            </div>
-                        </div>
-                        
-                        <div class="control-group">
-                            <button class="control-btn" id="settings-btn">
-                                <i class="fas fa-cog"></i>
-                            </button>
-                            <button class="control-btn" id="theater-btn">
-                                <i class="fas fa-expand-alt"></i>
-                            </button>
-                            <button class="control-btn" id="fullscreen-btn">
-                                <i class="fas fa-expand"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
+                <div class="bottom-controls">
                     <div class="progress-container">
                         <div class="progress-bar" id="progress-bar">
                             <div class="progress" id="progress"></div>
                         </div>
                     </div>
-                </div>
-            </div>
-            
-            <!-- Stream information -->
-            <div class="stream-info">
-                <h1 class="stream-title">
-                    <span>Live Streaming: Star1 TV Channel</span>
-                    <span class="live-badge">
-                        <i class="fas fa-circle"></i> LIVE
-                    </span>
-                </h1>
-                <p>This is a live stream from Star1 TV. Enjoy the broadcast with full interactive features.</p>
-                
-                <div class="stream-stats">
-                    <div class="stat">
-                        <i class="fas fa-eye"></i>
-                        <span class="live-viewers" id="viewer-count">15,423</span> viewers
-                    </div>
-                    <div class="stat">
-                        <i class="fas fa-thumbs-up"></i>
-                        <span id="like-count">4.7K</span>
-                    </div>
-                    <div class="stat">
-                        <i class="fas fa-share"></i>
-                        Share
+                    <div class="time-volume-container">
+                        <div class="time-display">
+                            <span id="current-time">0:00</span> / <span id="duration">LIVE</span>
+                        </div>
+                        <div class="volume-container">
+                            <button class="header-btn" id="mobile-mute-btn">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                            <input type="range" id="volume-slider" min="0" max="100" value="100" class="volume-slider">
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Stream URL info -->
-            <div class="stream-url-info">
-                <div><i class="fas fa-info-circle"></i> Currently streaming from:</div>
-                <div class="stream-url">https://wasitv-pro.site/dd.php?c=star1in</div>
             </div>
         </div>
         
-        <!-- Sidebar with chat and settings -->
-        <div class="sidebar">
-            <!-- Chat section -->
-            <div class="chat-container">
-                <div class="chat-header">
-                    <span>Live Chat</span>
-                    <span id="chat-user-count">2,148 participants</span>
+        <!-- Stream information -->
+        <div class="stream-info">
+            <h1 class="stream-title">Star1 TV - Live Streaming</h1>
+            <p class="stream-description">Live broadcast from Star1 TV channel. Enjoy your favorite shows anytime, anywhere.</p>
+            
+            <div class="stream-stats">
+                <div class="stat">
+                    <div class="stat-icon">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <div class="stat-count" id="viewer-count">15.4K</div>
+                    <div class="stat-label">Viewers</div>
                 </div>
                 
-                <div class="chat-messages" id="chat-messages">
-                    <!-- Chat messages will be added here by JavaScript -->
-                </div>
+                <button class="stat like-btn" id="like-btn">
+                    <div class="stat-icon">
+                        <i class="fas fa-thumbs-up"></i>
+                    </div>
+                    <div class="stat-count" id="like-count">4.7K</div>
+                    <div class="stat-label">Likes</div>
+                </button>
                 
-                <div class="chat-input-container">
-                    <input type="text" class="chat-input" id="chat-input" placeholder="Send a message to the stream...">
-                    <button class="chat-send-btn" id="chat-send-btn">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
+                <button class="stat" id="share-btn">
+                    <div class="stat-icon">
+                        <i class="fas fa-share-alt"></i>
+                    </div>
+                    <div class="stat-count">Share</div>
+                    <div class="stat-label">&nbsp;</div>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Stream URL info -->
+        <div class="stream-url-info">
+            <div><i class="fas fa-info-circle"></i> Streaming from:</div>
+            <div class="stream-url">https://wasitv-pro.site/dd.php?c=star1in</div>
+        </div>
+        
+        <!-- Settings Panel -->
+        <div class="settings-panel" id="settings-panel">
+            <div class="settings-header">
+                <div class="settings-title">Stream Settings</div>
+                <button class="close-settings" id="close-settings-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="settings-group">
+                <label class="settings-label">Video Quality</label>
+                <div class="settings-options">
+                    <button class="quality-option active" data-quality="auto">Auto</button>
+                    <button class="quality-option" data-quality="1080">1080p</button>
+                    <button class="quality-option" data-quality="720">720p</button>
+                    <button class="quality-option" data-quality="480">480p</button>
                 </div>
             </div>
             
-            <!-- Stream settings -->
-            <div class="settings-container">
-                <div class="settings-header">
-                    <span>Stream Settings</span>
-                    <button class="control-btn" id="close-settings-btn">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                
-                <div class="settings-option">
-                    <label class="settings-label">Quality</label>
-                    <select class="quality-select" id="quality-select">
-                        <option value="auto">Auto (Recommended)</option>
-                        <option value="1080p">1080p (Full HD)</option>
-                        <option value="720p">720p (HD)</option>
-                        <option value="480p">480p (SD)</option>
-                        <option value="360p">360p</option>
-                    </select>
-                </div>
-                
-                <div class="settings-option">
-                    <label class="settings-label">Playback Speed</label>
-                    <select class="speed-select" id="speed-select">
-                        <option value="0.25">0.25x</option>
-                        <option value="0.5">0.5x</option>
-                        <option value="0.75">0.75x</option>
-                        <option value="1" selected>Normal (1x)</option>
-                        <option value="1.25">1.25x</option>
-                        <option value="1.5">1.5x</option>
-                        <option value="2">2x</option>
-                    </select>
-                </div>
-                
-                <div class="settings-option">
-                    <label class="settings-label">Stream Source</label>
-                    <input type="text" class="quality-select" id="stream-url-input" value="https://wasitv-pro.site/dd.php?c=star1in">
-                    <button id="update-stream-btn" style="margin-top: 10px; width: 100%; background-color: #ff0040; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer;">Update Stream URL</button>
-                </div>
+            <div class="settings-group">
+                <label class="settings-label">Playback Speed</label>
+                <select class="settings-select" id="speed-select">
+                    <option value="0.5">0.5x Slow</option>
+                    <option value="0.75">0.75x</option>
+                    <option value="1" selected>Normal (1x)</option>
+                    <option value="1.25">1.25x</option>
+                    <option value="1.5">1.5x Fast</option>
+                    <option value="2">2x Very Fast</option>
+                </select>
             </div>
+            
+            <div class="settings-group">
+                <label class="settings-label">Stream URL</label>
+                <input type="text" class="settings-select" id="stream-url-input" value="https://wasitv-pro.site/dd.php?c=star1in">
+                <button class="retry-btn" id="update-stream-btn" style="margin-top: 15px;">Update Stream</button>
+            </div>
+        </div>
+        
+        <!-- Settings backdrop -->
+        <div class="settings-backdrop" id="settings-backdrop"></div>
+        
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <button class="nav-item active" id="nav-home">
+                <i class="fas fa-home nav-icon"></i>
+                <span>Home</span>
+            </button>
+            <button class="nav-item" id="nav-explore">
+                <i class="fas fa-compass nav-icon"></i>
+                <span>Explore</span>
+            </button>
+            <button class="nav-item" id="nav-library">
+                <i class="fas fa-play-circle nav-icon"></i>
+                <span>Library</span>
+            </button>
+            <button class="nav-item" id="nav-settings">
+                <i class="fas fa-cog nav-icon"></i>
+                <span>Settings</span>
+            </button>
         </div>
     </div>
 
     <script>
         // DOM Elements
         const videoPlayer = document.getElementById('video-player');
-        const playPauseBtn = document.getElementById('play-pause-btn');
-        const muteBtn = document.getElementById('mute-btn');
+        const videoContainer = document.getElementById('video-container');
+        const mobileControls = document.getElementById('mobile-controls');
+        const mobilePlayBtn = document.getElementById('mobile-play-btn');
+        const mobileMuteBtn = document.getElementById('mobile-mute-btn');
+        const mobileSettingsBtn = document.getElementById('mobile-settings-btn');
+        const rewindBtn = document.getElementById('rewind-btn');
+        const forwardBtn = document.getElementById('forward-btn');
         const volumeSlider = document.getElementById('volume-slider');
         const progressBar = document.getElementById('progress-bar');
         const progress = document.getElementById('progress');
         const currentTimeEl = document.getElementById('current-time');
         const durationEl = document.getElementById('duration');
-        const theaterBtn = document.getElementById('theater-btn');
-        const fullscreenBtn = document.getElementById('fullscreen-btn');
         const settingsBtn = document.getElementById('settings-btn');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
         const closeSettingsBtn = document.getElementById('close-settings-btn');
-        const qualitySelect = document.getElementById('quality-select');
+        const settingsPanel = document.getElementById('settings-panel');
+        const settingsBackdrop = document.getElementById('settings-backdrop');
+        const qualityOptions = document.querySelectorAll('.quality-option');
         const speedSelect = document.getElementById('speed-select');
-        const chatMessages = document.getElementById('chat-messages');
-        const chatInput = document.getElementById('chat-input');
-        const chatSendBtn = document.getElementById('chat-send-btn');
         const viewerCount = document.getElementById('viewer-count');
-        const chatUserCount = document.getElementById('chat-user-count');
+        const likeBtn = document.getElementById('like-btn');
         const likeCount = document.getElementById('like-count');
+        const shareBtn = document.getElementById('share-btn');
         const loadingIndicator = document.getElementById('loading-indicator');
         const errorMessage = document.getElementById('error-message');
         const errorText = document.getElementById('error-text');
         const retryBtn = document.getElementById('retry-btn');
         const streamUrlInput = document.getElementById('stream-url-input');
         const updateStreamBtn = document.getElementById('update-stream-btn');
+        const navItems = document.querySelectorAll('.nav-item');
         
-        // Stream URL
+        // State variables
+        let isPlaying = false;
+        let isMuted = false;
+        let lastVolume = 100;
         let currentStreamUrl = "https://wasitv-pro.site/dd.php?c=star1in";
-        
-        // Sample chat messages
-        const sampleMessages = [
-            {username: "StreamFan42", message: "Great stream! The quality is excellent.", time: "2:15"},
-            {username: "TVWatcher", message: "Star1 always has the best content!", time: "2:30"},
-            {username: "LiveViewer", message: "Can we get more shows like this?", time: "3:05"},
-            {username: "MediaLover", message: "How often does this channel stream live?", time: "3:45"},
-            {username: "BroadcastTeam", message: "Thanks for watching everyone! More content coming soon.", time: "4:10"}
-        ];
-        
-        // Sample usernames for random chat
-        const usernames = [
-            "AlexR", "TVLover", "StreamWatcher", "MediaFan", "BroadcastViewer", 
-            "ChannelSub", "LiveTVFan", "Entertainment", "ShowTime", "StarViewer"
-        ];
+        let controlsTimeout;
+        let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
         // Initialize player
         function initPlayer() {
@@ -624,230 +851,334 @@
             loadingIndicator.style.display = 'block';
             
             // Setup video event listeners
-            videoPlayer.addEventListener('loadeddata', function() {
-                loadingIndicator.style.display = 'none';
-                errorMessage.style.display = 'none';
-                console.log("Stream loaded successfully");
-            });
-            
-            videoPlayer.addEventListener('waiting', function() {
-                loadingIndicator.style.display = 'block';
-            });
-            
-            videoPlayer.addEventListener('playing', function() {
-                loadingIndicator.style.display = 'none';
-                errorMessage.style.display = 'none';
-            });
-            
-            videoPlayer.addEventListener('error', function(e) {
-                loadingIndicator.style.display = 'none';
-                errorMessage.style.display = 'block';
-                
-                // Determine error type
-                if (videoPlayer.error) {
-                    switch(videoPlayer.error.code) {
-                        case 1:
-                            errorText.textContent = "Video loading was aborted.";
-                            break;
-                        case 2:
-                            errorText.textContent = "Network error. Please check your connection.";
-                            break;
-                        case 3:
-                            errorText.textContent = "Error in video decoding.";
-                            break;
-                        case 4:
-                            errorText.textContent = "Video format not supported.";
-                            break;
-                        default:
-                            errorText.textContent = "An error occurred while loading the stream.";
-                    }
-                }
-            });
+            videoPlayer.addEventListener('loadeddata', handleStreamLoaded);
+            videoPlayer.addEventListener('waiting', handleStreamWaiting);
+            videoPlayer.addEventListener('playing', handleStreamPlaying);
+            videoPlayer.addEventListener('error', handleStreamError);
+            videoPlayer.addEventListener('timeupdate', updateProgress);
             
             // Play/Pause functionality
-            playPauseBtn.addEventListener('click', togglePlayPause);
-            videoPlayer.addEventListener('click', togglePlayPause);
+            mobilePlayBtn.addEventListener('click', togglePlayPause);
+            videoContainer.addEventListener('click', handleVideoTap);
             
             // Mute/Unmute functionality
-            muteBtn.addEventListener('click', toggleMute);
+            mobileMuteBtn.addEventListener('click', toggleMute);
             
             // Volume control
-            volumeSlider.addEventListener('input', function() {
-                videoPlayer.volume = this.value / 100;
-                muteBtn.innerHTML = this.value == 0 ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
-            });
+            volumeSlider.addEventListener('input', handleVolumeChange);
             
-            // Progress bar - not fully applicable for live streams but kept for UI consistency
-            progressBar.addEventListener('click', function(e) {
-                // For live streams, this would typically not seek but we keep it for UI consistency
-                console.log("Live stream - seeking not available");
-            });
+            // Progress bar seek
+            progressBar.addEventListener('click', handleProgressSeek);
             
-            // Theater mode
-            theaterBtn.addEventListener('click', toggleTheaterMode);
-            
-            // Fullscreen mode
-            fullscreenBtn.addEventListener('click', toggleFullscreen);
+            // Rewind/Forward buttons
+            rewindBtn.addEventListener('click', () => seekVideo(-10));
+            forwardBtn.addEventListener('click', () => seekVideo(10));
             
             // Settings
-            settingsBtn.addEventListener('click', function() {
-                document.querySelector('.settings-container').style.display = 'block';
-            });
-            
-            closeSettingsBtn.addEventListener('click', function() {
-                document.querySelector('.settings-container').style.display = 'none';
-            });
+            settingsBtn.addEventListener('click', openSettings);
+            mobileSettingsBtn.addEventListener('click', openSettings);
+            closeSettingsBtn.addEventListener('click', closeSettings);
+            settingsBackdrop.addEventListener('click', closeSettings);
             
             // Quality selection
-            qualitySelect.addEventListener('change', function() {
-                // In a real app, this would change the video source quality
-                console.log(`Quality changed to: ${this.value}`);
-                showNotification(`Stream quality changed to ${this.value}`);
+            qualityOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    qualityOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    showNotification(`Quality set to ${this.textContent}`);
+                });
             });
             
             // Playback speed
             speedSelect.addEventListener('change', function() {
                 videoPlayer.playbackRate = parseFloat(this.value);
-                showNotification(`Playback speed changed to ${this.value}x`);
+                showNotification(`Playback speed: ${this.value}x`);
             });
             
             // Stream URL update
-            updateStreamBtn.addEventListener('click', function() {
-                const newUrl = streamUrlInput.value.trim();
-                if (newUrl && newUrl !== currentStreamUrl) {
-                    currentStreamUrl = newUrl;
-                    updateVideoSource(newUrl);
-                    showNotification("Stream URL updated");
-                    
-                    // Update the displayed URL
-                    document.querySelector('.stream-url').textContent = newUrl;
-                }
-            });
+            updateStreamBtn.addEventListener('click', updateStreamUrl);
             
             // Retry button for error recovery
-            retryBtn.addEventListener('click', function() {
-                updateVideoSource(currentStreamUrl);
+            retryBtn.addEventListener('click', retryStream);
+            
+            // Like button
+            likeBtn.addEventListener('click', handleLike);
+            
+            // Share button
+            shareBtn.addEventListener('click', handleShare);
+            
+            // Fullscreen
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+            
+            // Navigation
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    if (this.id === 'nav-settings') {
+                        openSettings();
+                    } else {
+                        showNotification(`${this.querySelector('span').textContent} section`);
+                    }
+                });
             });
             
-            // Chat functionality
-            chatSendBtn.addEventListener('click', sendChatMessage);
-            chatInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') sendChatMessage();
-            });
+            // Touch controls handling
+            videoContainer.addEventListener('touchstart', handleTouchStart);
+            videoContainer.addEventListener('touchend', handleTouchEnd);
             
-            // Initialize sample chat messages
-            sampleMessages.forEach(msg => addChatMessage(msg.username, msg.message, msg.time));
+            // Auto-hide controls
+            videoContainer.addEventListener('mousemove', showControls);
+            videoContainer.addEventListener('touchmove', showControls);
             
-            // Simulate live chat messages
-            setInterval(addRandomChatMessage, 8000);
-            
-            // Simulate viewer count changes
-            setInterval(updateViewerCount, 5000);
-            
-            // Initialize like count with a click handler
-            likeCount.parentElement.addEventListener('click', function() {
-                let currentLikes = parseInt(likeCount.textContent.replace('K', '') * 1000);
-                currentLikes += 1;
-                
-                if (currentLikes >= 1000) {
-                    likeCount.textContent = (currentLikes / 1000).toFixed(1) + 'K';
-                } else {
-                    likeCount.textContent = currentLikes;
-                }
-                
-                // Visual feedback
-                this.style.color = '#ff0040';
-                setTimeout(() => {
-                    this.style.color = 'rgba(255, 255, 255, 0.7)';
-                }, 300);
-            });
-            
-            // Show initial notification
-            setTimeout(() => {
-                showNotification("Live stream loaded. Chat is active.");
-            }, 1500);
+            // Initialize viewer count simulation
+            updateViewerCount();
+            setInterval(updateViewerCount, 8000);
             
             // Try to autoplay the stream
-            setTimeout(() => {
-                const playPromise = videoPlayer.play();
-                if (playPromise !== undefined) {
-                    playPromise.then(_ => {
-                        playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                    }).catch(error => {
-                        console.log("Autoplay prevented, waiting for user interaction");
-                    });
-                }
-            }, 1000);
+            attemptAutoplay();
         }
         
-        // Update video source
-        function updateVideoSource(url) {
-            loadingIndicator.style.display = 'block';
+        // Stream event handlers
+        function handleStreamLoaded() {
+            loadingIndicator.style.display = 'none';
             errorMessage.style.display = 'none';
+            console.log("Stream loaded successfully");
+        }
+        
+        function handleStreamWaiting() {
+            loadingIndicator.style.display = 'block';
+        }
+        
+        function handleStreamPlaying() {
+            loadingIndicator.style.display = 'none';
+            errorMessage.style.display = 'none';
+            isPlaying = true;
+            mobilePlayBtn.innerHTML = '<i class="fas fa-pause"></i>';
+        }
+        
+        function handleStreamError(e) {
+            loadingIndicator.style.display = 'none';
+            errorMessage.style.display = 'block';
             
-            // Save current time and volume
-            const currentTime = videoPlayer.currentTime;
-            const currentVolume = videoPlayer.volume;
-            const wasPlaying = !videoPlayer.paused;
-            
-            // Change the source
-            videoPlayer.src = url;
-            videoPlayer.load();
-            
-            // Restore volume
-            videoPlayer.volume = currentVolume;
-            volumeSlider.value = currentVolume * 100;
-            
-            // Try to play if it was playing before
-            if (wasPlaying) {
-                const playPromise = videoPlayer.play();
-                if (playPromise !== undefined) {
-                    playPromise.then(_ => {
-                        playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                    }).catch(error => {
-                        console.log("Playback prevented after source change");
-                    });
+            // Determine error type
+            if (videoPlayer.error) {
+                switch(videoPlayer.error.code) {
+                    case 1:
+                        errorText.textContent = "Stream loading was interrupted.";
+                        break;
+                    case 2:
+                        errorText.textContent = "Network error. Check your connection.";
+                        break;
+                    case 3:
+                        errorText.textContent = "Error decoding the stream.";
+                        break;
+                    case 4:
+                        errorText.textContent = "Stream format not supported.";
+                        break;
+                    default:
+                        errorText.textContent = "Failed to load the stream.";
                 }
             }
         }
         
         // Player control functions
-        function togglePlayPause() {
+        function togglePlayPause(e) {
+            if (e) e.stopPropagation();
+            
             if (videoPlayer.paused) {
                 videoPlayer.play();
-                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                isPlaying = true;
+                mobilePlayBtn.innerHTML = '<i class="fas fa-pause"></i>';
             } else {
                 videoPlayer.pause();
-                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                isPlaying = false;
+                mobilePlayBtn.innerHTML = '<i class="fas fa-play"></i>';
             }
-        }
-        
-        function toggleMute() {
-            videoPlayer.muted = !videoPlayer.muted;
-            muteBtn.innerHTML = videoPlayer.muted ? 
-                '<i class="fas fa-volume-mute"></i>' : 
-                '<i class="fas fa-volume-up"></i>';
-            volumeSlider.value = videoPlayer.muted ? 0 : videoPlayer.volume * 100;
-        }
-        
-        function toggleTheaterMode() {
-            const container = document.querySelector('.container');
-            const playerSection = document.querySelector('.player-section');
             
-            if (playerSection.classList.contains('theater-mode')) {
-                playerSection.classList.remove('theater-mode');
-                theaterBtn.innerHTML = '<i class="fas fa-expand-alt"></i>';
-                container.style.flexDirection = 'row';
+            showControls();
+        }
+        
+        function handleVideoTap(e) {
+            // On mobile, tapping the video toggles play/pause
+            if (isMobile) {
+                togglePlayPause(e);
+            }
+            
+            // Show controls when video is tapped
+            showControls();
+        }
+        
+        function toggleMute(e) {
+            if (e) e.stopPropagation();
+            
+            if (videoPlayer.muted) {
+                videoPlayer.muted = false;
+                mobileMuteBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                volumeSlider.value = lastVolume;
             } else {
-                playerSection.classList.add('theater-mode');
-                theaterBtn.innerHTML = '<i class="fas fa-compress-alt"></i>';
-                container.style.flexDirection = 'column';
+                lastVolume = volumeSlider.value;
+                videoPlayer.muted = true;
+                mobileMuteBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                volumeSlider.value = 0;
+            }
+            
+            isMuted = videoPlayer.muted;
+            showControls();
+        }
+        
+        function handleVolumeChange() {
+            videoPlayer.volume = this.value / 100;
+            lastVolume = this.value;
+            
+            if (this.value == 0) {
+                mobileMuteBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                videoPlayer.muted = true;
+                isMuted = true;
+            } else {
+                mobileMuteBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                videoPlayer.muted = false;
+                isMuted = false;
+            }
+            
+            showControls();
+        }
+        
+        function updateProgress() {
+            // For live streams, we don't update progress bar in traditional way
+            // But we can update time display
+            if (!isNaN(videoPlayer.duration) && videoPlayer.duration > 0) {
+                const percent = (videoPlayer.currentTime / videoPlayer.duration) * 100;
+                progress.style.width = `${percent}%`;
+                currentTimeEl.textContent = formatTime(videoPlayer.currentTime);
+            } else {
+                // Live stream - show LIVE indicator
+                currentTimeEl.textContent = formatTime(videoPlayer.currentTime);
             }
         }
         
-        function toggleFullscreen() {
-            const videoContainer = document.querySelector('.video-container');
+        function handleProgressSeek(e) {
+            const rect = this.getBoundingClientRect();
+            const pos = (e.clientX - rect.left) / rect.width;
             
+            if (!isNaN(videoPlayer.duration) && videoPlayer.duration > 0) {
+                videoPlayer.currentTime = pos * videoPlayer.duration;
+            }
+            
+            showControls();
+        }
+        
+        function seekVideo(seconds) {
+            if (!isNaN(videoPlayer.duration) && videoPlayer.duration > 0) {
+                videoPlayer.currentTime += seconds;
+                
+                if (videoPlayer.currentTime < 0) videoPlayer.currentTime = 0;
+                if (videoPlayer.currentTime > videoPlayer.duration) videoPlayer.currentTime = videoPlayer.duration;
+                
+                showNotification(seconds > 0 ? `Forward ${Math.abs(seconds)}s` : `Rewind ${Math.abs(seconds)}s`);
+            } else {
+                showNotification("Live stream - seeking not available");
+            }
+            
+            showControls();
+        }
+        
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+        
+        // Settings functions
+        function openSettings() {
+            settingsPanel.classList.add('open');
+            settingsBackdrop.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeSettings() {
+            settingsPanel.classList.remove('open');
+            settingsBackdrop.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        
+        function updateStreamUrl() {
+            const newUrl = streamUrlInput.value.trim();
+            if (newUrl && newUrl !== currentStreamUrl) {
+                currentStreamUrl = newUrl;
+                changeVideoSource(newUrl);
+                showNotification("Stream URL updated");
+                
+                // Update the displayed URL
+                document.querySelector('.stream-url').textContent = newUrl;
+            }
+            
+            closeSettings();
+        }
+        
+        function changeVideoSource(url) {
+            loadingIndicator.style.display = 'block';
+            errorMessage.style.display = 'none';
+            
+            // Save current state
+            const wasPlaying = !videoPlayer.paused;
+            const currentTime = videoPlayer.currentTime;
+            
+            // Change the source
+            videoPlayer.src = url;
+            videoPlayer.load();
+            
+            // Try to restore play state
+            if (wasPlaying) {
+                const playPromise = videoPlayer.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(_ => {
+                        mobilePlayBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                        isPlaying = true;
+                    }).catch(error => {
+                        console.log("Playback prevented after source change");
+                        isPlaying = false;
+                        mobilePlayBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    });
+                }
+            }
+        }
+        
+        function retryStream() {
+            changeVideoSource(currentStreamUrl);
+        }
+        
+        // Touch handling
+        function handleTouchStart() {
+            videoContainer.classList.add('touch-active');
+            showControls();
+        }
+        
+        function handleTouchEnd() {
+            // Keep controls visible for a bit after touch
+            showControls();
+        }
+        
+        // Controls visibility
+        function showControls() {
+            mobileControls.style.opacity = '1';
+            videoContainer.classList.add('touch-active');
+            
+            // Clear existing timeout
+            clearTimeout(controlsTimeout);
+            
+            // Hide controls after 3 seconds if not interacting
+            if (isPlaying) {
+                controlsTimeout = setTimeout(() => {
+                    mobileControls.style.opacity = '0';
+                    videoContainer.classList.remove('touch-active');
+                }, 3000);
+            }
+        }
+        
+        // Fullscreen
+        function toggleFullscreen() {
             if (!document.fullscreenElement) {
                 if (videoContainer.requestFullscreen) {
                     videoContainer.requestFullscreen();
@@ -858,7 +1189,6 @@
                 } else if (videoContainer.msRequestFullscreen) {
                     videoContainer.msRequestFullscreen();
                 }
-                fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
             } else {
                 if (document.exitFullscreen) {
                     document.exitFullscreen();
@@ -869,146 +1199,136 @@
                 } else if (document.msExitFullscreen) {
                     document.msExitFullscreen();
                 }
-                fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
-            }
-        }
-        
-        // Chat functions
-        function sendChatMessage() {
-            const message = chatInput.value.trim();
-            if (message) {
-                addChatMessage("You", message, "now");
-                chatInput.value = '';
-                
-                // Simulate a response after a short delay
-                setTimeout(() => {
-                    const responses = [
-                        "Thanks for your message!",
-                        "Glad you're enjoying the stream!",
-                        "We appreciate your feedback!",
-                        "Thanks for watching!"
-                    ];
-                    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                    addChatMessage("BroadcastTeam", randomResponse, "just now");
-                }, 1000);
-            }
-        }
-        
-        function addChatMessage(username, message, time) {
-            const messageEl = document.createElement('div');
-            messageEl.className = 'chat-message';
-            
-            const avatarLetter = username.charAt(0).toUpperCase();
-            const avatarColor = getAvatarColor(username);
-            
-            messageEl.innerHTML = `
-                <div class="user-avatar" style="background-color: ${avatarColor}">${avatarLetter}</div>
-                <div class="message-content">
-                    <div class="message-header">
-                        <span class="username">${username}</span>
-                        <span class="message-time">${time}</span>
-                    </div>
-                    <div class="message-text">${message}</div>
-                </div>
-            `;
-            
-            chatMessages.appendChild(messageEl);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-        
-        function addRandomChatMessage() {
-            const username = usernames[Math.floor(Math.random() * usernames.length)];
-            const messages = [
-                "Great stream quality!",
-                "What's the next program?",
-                "Star1 is my favorite channel!",
-                "Can you increase the volume?",
-                "Love the content!",
-                "When does this stream end?",
-                "Perfect for my evening watch!",
-                "Thanks for streaming this!"
-            ];
-            const message = messages[Math.floor(Math.random() * messages.length)];
-            const time = `${Math.floor(Math.random() * 60)}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`;
-            
-            addChatMessage(username, message, time);
-        }
-        
-        function getAvatarColor(username) {
-            // Generate a consistent color based on the username
-            const colors = [
-                '#ff0040', '#00a8ff', '#00d4aa', '#ffaa00', 
-                '#9c27b0', '#3d5afe', '#ff6b6b', '#4caf50'
-            ];
-            
-            let hash = 0;
-            for (let i = 0; i < username.length; i++) {
-                hash = username.charCodeAt(i) + ((hash << 5) - hash);
             }
             
-            return colors[Math.abs(hash) % colors.length];
+            showControls();
         }
         
         // Viewer count simulation
         function updateViewerCount() {
-            let currentViewers = parseInt(viewerCount.textContent.replace(',', ''));
-            // Randomly increase or decrease viewer count slightly
-            const change = Math.floor(Math.random() * 100) - 30;
-            currentViewers += change;
+            let current = viewerCount.textContent;
+            let num = parseInt(current.replace('K', '').replace('.', ''));
             
-            // Ensure viewer count doesn't go too low
-            if (currentViewers < 10000) currentViewers = 10000 + Math.floor(Math.random() * 5000);
+            // Randomly increase or decrease
+            const change = Math.floor(Math.random() * 200) - 80;
+            num += change;
             
-            viewerCount.textContent = currentViewers.toLocaleString();
+            // Keep within reasonable bounds
+            if (num < 10000) num = 10000;
+            if (num > 20000) num = 20000;
             
-            // Update chat participant count too
-            const chatParticipants = Math.floor(currentViewers * 0.15);
-            chatUserCount.textContent = `${chatParticipants.toLocaleString()} participants`;
+            // Format for display
+            if (num >= 10000) {
+                viewerCount.textContent = (num / 1000).toFixed(1) + 'K';
+            } else {
+                viewerCount.textContent = num.toLocaleString();
+            }
+        }
+        
+        // Like functionality
+        function handleLike() {
+            let current = likeCount.textContent;
+            let num = parseInt(current.replace('K', '').replace('.', ''));
+            
+            // Increase like count
+            num += 1;
+            
+            // Format for display
+            if (num >= 1000) {
+                likeCount.textContent = (num / 1000).toFixed(1) + 'K';
+            } else {
+                likeCount.textContent = num;
+            }
+            
+            // Visual feedback
+            likeBtn.style.color = '#ff0040';
+            setTimeout(() => {
+                likeBtn.style.color = '';
+            }, 500);
+            
+            showNotification("Liked the stream!");
+        }
+        
+        // Share functionality
+        function handleShare() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Star1 TV Live Stream',
+                    text: 'Watch Star1 TV live streaming now!',
+                    url: window.location.href,
+                })
+                .then(() => showNotification('Stream shared successfully'))
+                .catch(error => console.log('Error sharing:', error));
+            } else {
+                // Fallback for browsers that don't support Web Share API
+                navigator.clipboard.writeText(window.location.href)
+                    .then(() => showNotification('Link copied to clipboard'))
+                    .catch(err => console.error('Failed to copy:', err));
+            }
         }
         
         // Notification system
         function showNotification(message) {
+            // Remove existing notification
+            const existingNotification = document.querySelector('.notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+            
             // Create notification element
             const notification = document.createElement('div');
             notification.className = 'notification';
             notification.textContent = message;
-            notification.style.cssText = `
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                background-color: #333;
-                color: white;
-                padding: 12px 20px;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                z-index: 1000;
-                font-size: 14px;
-                animation: fadeInOut 3s ease-in-out;
-            `;
-            
-            // Add styles for animation
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes fadeInOut {
-                    0% { opacity: 0; transform: translateY(20px); }
-                    10% { opacity: 1; transform: translateY(0); }
-                    90% { opacity: 1; transform: translateY(0); }
-                    100% { opacity: 0; transform: translateY(20px); }
-                }
-            `;
-            document.head.appendChild(style);
             
             document.body.appendChild(notification);
             
             // Remove notification after animation
             setTimeout(() => {
-                notification.remove();
-                style.remove();
+                if (notification.parentNode) {
+                    notification.remove();
+                }
             }, 3000);
         }
         
+        // Attempt autoplay with user gesture detection
+        function attemptAutoplay() {
+            // Try to autoplay after a short delay
+            setTimeout(() => {
+                const playPromise = videoPlayer.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.then(_ => {
+                        isPlaying = true;
+                        mobilePlayBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                        showNotification("Live stream started");
+                    }).catch(error => {
+                        // Autoplay prevented, wait for user interaction
+                        console.log("Autoplay prevented, waiting for user interaction");
+                        isPlaying = false;
+                        mobilePlayBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    });
+                }
+            }, 500);
+        }
+        
         // Initialize the player when page loads
-        window.addEventListener('DOMContentLoaded', initPlayer);
+        document.addEventListener('DOMContentLoaded', initPlayer);
+        
+        // Handle fullscreen change
+        document.addEventListener('fullscreenchange', function() {
+            if (document.fullscreenElement) {
+                fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+            } else {
+                fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+            }
+        });
+        
+        // Prevent context menu on long press
+        document.addEventListener('contextmenu', function(e) {
+            if (e.target.closest('.video-container')) {
+                e.preventDefault();
+            }
+        });
     </script>
 </body>
 </html>
